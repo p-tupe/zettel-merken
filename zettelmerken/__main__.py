@@ -8,6 +8,7 @@ from zettelmerken.helpers import (
     remove_timer_units,
     remove_database,
     show_help,
+    show_version
 )
 
 
@@ -21,6 +22,8 @@ elif "--config" in sys.argv:
     open_config()
 elif "--help" in sys.argv:
     show_help()
+elif "--version" in sys.argv:
+    show_version()
 else:
     if sys.argv[1:]:
         print(f"Error: Unknown argument: {sys.argv[1:]}")

@@ -98,12 +98,15 @@ def _add_launchd_units():
     CONF_DIR = Path("~/Library/LaunchAgents").expanduser().resolve()
     TIMER_UNIT = CONF_DIR / "com.zettelmerken.dailyreview.plist"
 
+    which_python = run("which python3", shell=True, capture_output=True)
+    PYTHON_PATH = which_python.stdout.decode().rstrip()
+
     if not CONF_DIR.exists():
         os.mkdir(CONF_DIR)
 
     with open(TIMER_UNIT, "w") as timer:
         timer.write(
-            """\
+            f"""\
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
             <plist version="1.0">
@@ -114,7 +117,7 @@ def _add_launchd_units():
                 <string>Zettelmerken Daily Review</string>
                 <key>ProgramArguments</key>
                 <array>
-                  <string>/opt/homebrew/bin/python3</string>
+                <string>{PYTHON_PATH}</string>
                   <string>-m</string>
                   <string>zettelmerken</string>
                 </array>
@@ -123,9 +126,9 @@ def _add_launchd_units():
                 <key>StartCalendarInterval</key>
                 <dict>
                   <key>Hour</key>
-                  <integer>0</integer>
+                  <integer>13</integer>
                   <key>Minute</key>
-                  <integer>10</integer>
+                  <integer>35</integer>
                 </dict>
                 <!-- For Debugging
                 <key>StandardErrorPath</key>
@@ -140,10 +143,9 @@ def _add_launchd_units():
 
     run(f"plutil {TIMER_UNIT}", shell=True)
     run(
-        f"launchctl load {TIMER_UNIT}",
+        f"launchctl load -w {TIMER_UNIT}",
         shell=True,
     )
-    run(f"launchctl enable {TIMER_UNIT}", shell=True)
 
 
 def add_timer_units():
@@ -194,11 +196,17 @@ def show_help():
         """
         USAGE: python -m zettelmerken [OPTION]
 
-        OPTOINS:
-            --help    Show this help
-            --config  Create and open config.json
-            --init    Init systemd units
-            --remove  Remove database and systemd units
+        OPTIONS:
+            --version  Print version number
+            --help     Show this help
+            --config   Create and open config.json
+            --init     Init timer units
+            --remove   Remove database and systemd units
+
+        DOC: https://www.github.com/empat94/zettel-merken.git
+
+        NOTES:
+            1. Zettel Merken uses systemd service/timer units on linux and launchd agent on macos. Timers aren't setup for windows.
         """
     )
     print(help_str)
@@ -210,12 +218,31 @@ def remove_database():
 
 
 def remove_systemd_units():
-    if os.name != "posix":
-        print("This script for only systemd users!")
-        exit()
-
     CONF_DIR = Path("~/.config/systemd/user").expanduser().resolve()
     run("systemctl --user disable --now zettel_merken.timer", shell=True)
     run("systemctl --user disable --now zettel_merken.service", shell=True)
     (CONF_DIR / "zettel_merken.timer").unlink(missing_ok=True)
     (CONF_DIR / "zettel_merken.service").unlink(missing_ok=True)
+
+
+def remove_launchd_units():
+    CONF_DIR = Path("~/Library/LaunchAgents").expanduser().resolve()
+    TIMER_UNIT = CONF_DIR / "com.zettelmerken.dailyreview.plist"
+    run(f"launchctl unload -w {TIMER_UNIT}", shell=True)
+    (TIMER_UNIT).unlink(missing_ok=True)
+
+
+def remove_timer_units():
+    if platform == "linux":
+        remove_systemd_units()
+    elif platform == "darwin":
+        remove_launchd_units()
+    else:
+        print("Invalid platform detected, not doing anything!")
+        exit()
+
+
+def show_version():
+    from zettelmerken.__about__ import __version__
+
+    print(__version__)
