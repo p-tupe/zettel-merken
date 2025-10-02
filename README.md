@@ -18,6 +18,14 @@ Zettel stands for "note" and Merken stands for "remember" in German. A literal t
 
 To be precise, Zettel Merken is a fusion of two impactful ideas in the field of knowledge management and learning enhancement: "Zettelkasten" and "Spaced Repetition".
 
+## Installation
+
+```sh
+go install https://github.com/p-tupe/zettel-merken
+```
+
+## Setup
+
 ## What is Zettelkasten?
 
 The [Wikipedia article](https://en.wikipedia.org/wiki/Zettelkasten) defines zettelkasten as "The zettelkasten is a system of note-taking and personal knowledge management used in research and study".
@@ -138,53 +146,3 @@ Excerpt from [e-student.org](https://e-student.org/spaced-repetition/):
 It is quite difficult to manually track hundreds of notes and review a set everyday. You'd have to keep logs of when each topic was visited, how many repetitions were completed, when the next review will be and so on. Quite cumbersome!
 
 That is were Zettel Merken comes into play. Not only does this program keep track of your every note and its schedule, it also automatically emails notes that are due for review for the day! How awesome is that? It is quite easy to use too!
-
-## Setup
-
-**_NOTE: Code was written in and tested on Manjaro Linux (kernel 5.18) with Python 3.10 (compatible with 3.9)_**
-
-1. Install
-
-   ```shell
-   python -m pip install zettelmerken
-   ```
-
-2. Configure
-
-   ```shell
-   python -m zettelmerken --config
-   ```
-
-   Create a `config.json` in either `~/.config/zettel_merken/` or `~/zettel_merken`, and open in default editor.
-
-3. Initialize
-
-   ```shell
-   python -m zettelmerken --init
-   ```
-
-   Create systemd units to exectute zettelmerken on a daily basis.
-
-- Help
-
-  ```shell
-  python -m zettelmerken --help
-  ```
-
-## TODOs
-
-### v0.2
-
-- [ ] Add slack webhook alternative to email
-- [ ] Add a wiki
-
-### v0.3
-
-- [ ] MacOS Support
-
-## Maybes
-
-- [ ] config.toml instead of config.json?
-- [ ] Windows Support?
-- [ ] Per-note schedule?
-- [ ] Docker Image?

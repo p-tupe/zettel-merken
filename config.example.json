@@ -1,0 +1,12 @@
+{
+  "NOTE_DIRS": ["/path/to/notes"],
+
+  "EMAIL": {
+    "USER": "sender@mail.com",
+    "PASS": "sample_password",
+    "HOST": "smtp.mail.com",
+    "PORT": 465
+  },
+
+  "RECEIVERS": ["receiver@mail.com"]
+}
