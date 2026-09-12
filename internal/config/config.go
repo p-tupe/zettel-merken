@@ -19,12 +19,12 @@ type Config struct {
 func Path() (string, error) {
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
-		return "", fmt.Errorf("unable to open config dir: %w", err)
+		return "", fmt.Errorf("unable to open config dir at %s: %w", userConfigDir, err)
 	}
 
 	appConfigDir := filepath.Join(userConfigDir, "zettelmerken")
 	if err := os.MkdirAll(appConfigDir, 0o755); err != nil {
-		return "", fmt.Errorf("unable to create app config dir: %w", err)
+		return "", fmt.Errorf("unable to create app config dir at %s: %w", appConfigDir, err)
 	}
 
 	return filepath.Join(appConfigDir, "config.json"), nil
@@ -33,14 +33,16 @@ func Path() (string, error) {
 func Read() (Config, error) {
 	var cfg Config
 
-	if len(os.Args) < 2 || os.Args[1] == "" {
-		return cfg, fmt.Errorf("no config file path found")
+	cfgPath, err := Path()
+	if err != nil {
+		return cfg, err
 	}
 
-	cfgFile, err := os.Open(os.Args[1])
+	cfgFile, err := os.Open(cfgPath)
 	if err != nil {
 		return cfg, fmt.Errorf("unable to open config file: %w", err)
 	}
+	defer cfgFile.Close()
 
 	err = json.NewDecoder(cfgFile).Decode(&cfg)
 	if err != nil {

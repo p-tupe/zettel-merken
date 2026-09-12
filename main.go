@@ -1,51 +1,66 @@
-// zettel-merken is your daily review notifier for studing.
-//
-// Usage:
-//
-//	$ zettel-merken init <notes_dir> # Initial Setup
-//	$ zettel-merken config # Opens config file
-//	$ zettel-merken help # Daily Review run
-//	$ zettel-merken # Daily Review run
+// zettel-merken is your daily review helper!
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 
 	"github.com/p-tupe/zettel-merken/internal/config"
-	"github.com/p-tupe/zettel-merken/internal/help"
 	"github.com/p-tupe/zettel-merken/internal/initialize"
-	"github.com/p-tupe/zettel-merken/internal/run"
 )
+
+const helpText = `zettel-merken is your daily review helper!
+
+Usage:
+
+  zettel-merken init <notes_dir>    Initial setup
+  zettel-merken config              Opens config file
+  zettel-merken help                Show this help
+  zettel-merken run                 Daily Review run`
 
 func main() {
 	if len(os.Args) <= 1 {
-		slog.Error("Error: no valid option supplied. See `zettel-merken help` for usage.")
-		return
+		slog.Error("no valid option supplied")
+		os.Exit(1)
 	}
 
-	switch os.Args[1] {
+	if err := dispatch(os.Args[1], os.Args[1:]); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+
+}
+
+func dispatch(command string, rest []string) error {
+	switch command {
 	case "init":
-		if err := initialize.Setup(); err != nil {
-			slog.Error("Error while initilizing", "err", err.Error())
+		if len(rest) == 0 {
+			return errors.New("need a notes dir with init")
+		}
+
+		if err := initialize.Setup(rest[0]); err != nil {
+			return fmt.Errorf("could not initialize, %w", err)
 		}
 
 	case "config":
 		if err := config.Edit(); err != nil {
-			slog.Error("Error while opening config", "err", err.Error())
+			return fmt.Errorf("cannot opening config, %w", err)
+		}
+
+	case "run":
+		if err := dailyRun(); err != nil {
+			return fmt.Errorf("daily run failed, %w", err)
 		}
 
 	case "help":
-		help.Show()
-
-	case "run":
-		if err := run.Run(); err != nil {
-			slog.Error("Error during daily run", "err", err)
-		}
+		fmt.Println(helpText)
 
 	default:
-		slog.Error(fmt.Sprintf("Error parsing option %s. Must be one of [init | run | config | help]", os.Args[1]))
-		return
+		fmt.Printf("error: unknown option %s\n", os.Args[1])
+		fmt.Println(helpText)
 	}
+
+	return nil
 }
