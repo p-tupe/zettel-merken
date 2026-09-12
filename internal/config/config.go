@@ -16,18 +16,27 @@ type Config struct {
 	Exclude []string `json:"exclude"`
 }
 
+func EnsureDir() error {
+	userConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		return fmt.Errorf("unable to open config dir at %s: %w", userConfigDir, err)
+	}
+
+	appConfigDir := filepath.Join(userConfigDir, "zettelmerken")
+	if err := os.MkdirAll(appConfigDir, 0o755); err != nil {
+		return fmt.Errorf("unable to create app config dir at %s: %w", appConfigDir, err)
+	}
+
+	return nil
+}
+
 func Path() (string, error) {
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", fmt.Errorf("unable to open config dir at %s: %w", userConfigDir, err)
 	}
 
-	appConfigDir := filepath.Join(userConfigDir, "zettelmerken")
-	if err := os.MkdirAll(appConfigDir, 0o755); err != nil {
-		return "", fmt.Errorf("unable to create app config dir at %s: %w", appConfigDir, err)
-	}
-
-	return filepath.Join(appConfigDir, "config.json"), nil
+	return filepath.Join(userConfigDir, "zettelmerken", "config.json"), nil
 }
 
 func Read() (Config, error) {
@@ -76,6 +85,10 @@ func Edit() error {
 }
 
 func Setup(notesDir string) error {
+	if err := EnsureDir(); err != nil {
+		return err
+	}
+
 	cfgPath, err := Path()
 	if err != nil {
 		return err
@@ -89,7 +102,7 @@ func Setup(notesDir string) error {
 
 	defaultCfg := Config{
 		Notes:   []string{notesDir},
-		Exclude: []string{".git"},
+		Exclude: []string{".*"},
 	}
 
 	err = json.NewEncoder(cfgFile).Encode(defaultCfg)

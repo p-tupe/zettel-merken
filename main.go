@@ -18,7 +18,7 @@ Usage:
   zettel-merken init <notes_dir>    Initial setup
   zettel-merken config              Opens config file
   zettel-merken help                Show this help
-  zettel-merken run                 Daily Review run`
+  zettel-merken run                 Daily review run`
 
 func main() {
 	if len(os.Args) <= 1 {
@@ -26,21 +26,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := dispatch(os.Args[1], os.Args[1:]); err != nil {
+	if err := dispatch(os.Args[1], os.Args); err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
 }
 
-func dispatch(command string, rest []string) error {
+func dispatch(command string, all []string) error {
 	switch command {
 	case "init":
-		if len(rest) == 0 {
+		if len(all) < 3 {
 			return errors.New("need a notes dir with init")
 		}
 
-		if err := initialize.Setup(rest[0]); err != nil {
+		if err := initialize.Setup(all[2]); err != nil {
 			return fmt.Errorf("could not initialize, %w", err)
 		}
 
@@ -58,8 +58,7 @@ func dispatch(command string, rest []string) error {
 		fmt.Println(helpText)
 
 	default:
-		fmt.Printf("error: unknown option %s\n", os.Args[1])
-		fmt.Println(helpText)
+		return fmt.Errorf("error: unknown option %s", os.Args[1])
 	}
 
 	return nil

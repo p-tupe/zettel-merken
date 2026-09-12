@@ -13,17 +13,21 @@ func dailyRun() error {
 		return err
 	}
 
-	store, err := store.Load()
+	store, err := store.New(cfg)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(cfg)
+	if err = store.UpdateNotes(); err != nil {
+		return err
+	}
 
 	v, err := store.Version()
 	if err != nil {
 		return err
 	}
+
+	fmt.Println(cfg)
 	fmt.Println("Sql Version:", v)
 
 	return nil
