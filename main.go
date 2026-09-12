@@ -1,22 +1,49 @@
+// zettel-merken is your daily review notifier for studing.
+//
+// Usage:
+//
+//	$ zettel-merken init <notes_dir> # Initial Setup
+//	$ zettel-merken config # Opens config file
+//	$ zettel-merken help # Daily Review run
+//	$ zettel-merken # Daily Review run
 package main
 
-import "os"
+import (
+	"fmt"
+	"log/slog"
+	"os"
+
+	"github.com/p-tupe/zettel-merken/internal/help"
+	"github.com/p-tupe/zettel-merken/internal/initialize"
+	"github.com/p-tupe/zettel-merken/internal/run"
+)
 
 func main() {
-	cfgFile, err := os.Open("./config.example.json")
-	if err != nil {
-		panic(err)
+	if len(os.Args) <= 1 {
+		slog.Error("Error: no valid option supplied. See `zettel-merken help` for usage.")
+		return
 	}
 
-	cfg, err := NewConfig(cfgFile)
-	if err != nil {
-		panic(err)
-	}
+	switch os.Args[1] {
+	case "init":
+		if err := initialize.Setup(); err != nil {
+			slog.Error("Error while initilizing", "err", err.Error())
+			return
+		}
 
-	db, err := NewConn()
-	if err != nil {
-		panic(err)
-	}
+	case "config":
+		fmt.Println("Configuration initialized!")
 
-	print(cfg, db)
+	case "help":
+		help.Show()
+
+	case "run":
+		if err := run.Run(); err != nil {
+			slog.Error("Error during daily run", "err", err)
+		}
+
+	default:
+		slog.Error(fmt.Sprintf("Error parsing option %s. Must be one of [init | run | config | help]", os.Args[1]))
+		return
+	}
 }
