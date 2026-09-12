@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/p-tupe/zettel-merken/internal/config"
 	"github.com/p-tupe/zettel-merken/internal/help"
 	"github.com/p-tupe/zettel-merken/internal/initialize"
 	"github.com/p-tupe/zettel-merken/internal/run"
@@ -28,11 +29,12 @@ func main() {
 	case "init":
 		if err := initialize.Setup(); err != nil {
 			slog.Error("Error while initilizing", "err", err.Error())
-			return
 		}
 
 	case "config":
-		fmt.Println("Configuration initialized!")
+		if err := config.Edit(); err != nil {
+			slog.Error("Error while opening config", "err", err.Error())
+		}
 
 	case "help":
 		help.Show()
