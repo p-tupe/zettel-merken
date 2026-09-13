@@ -12,6 +12,7 @@ fn main() -> anyhow::Result<()> {
         .as_slice()
     {
         [] => anyhow::bail!("needs a command"),
+        ["init"] => anyhow::bail!("needs a note directory"),
         ["init", notes_dir @ ..] => init(notes_dir.to_vec()),
         ["run"] => Ok(()),
         ["config"] => Ok(()),
@@ -21,8 +22,8 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn init(notes_dir: Vec<&str>) -> anyhow::Result<()> {
-    let c = config::default(notes_dir);
+    let c = config::base(notes_dir);
     c.load();
-    c.write("/tmp/config.json")?;
+    c.write()?;
     Ok(())
 }
