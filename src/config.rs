@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 
 use serde::{Deserialize, Serialize};
 
@@ -8,8 +8,8 @@ use crate::utils::get_config_dir;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    notes: Vec<String>,
-    exclude: Vec<String>,
+    pub notes: Vec<String>,
+    pub exclude: Vec<String>,
 }
 
 pub fn base(notes_dir: Vec<&str>) -> Config {
@@ -21,10 +21,12 @@ pub fn base(notes_dir: Vec<&str>) -> Config {
 
 impl Config {
     pub fn write(&self) -> Result<()> {
-        if fs::exists(path()?)? {
-            bail!("config already exists");
-        }
-        Ok(fs::write(path()?, serde_json::to_string_pretty(self)?)?)
+        let f = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path()?)?;
+
+        Ok(serde_json::to_writer_pretty(f, self)?)
     }
 }
 

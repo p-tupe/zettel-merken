@@ -24,6 +24,10 @@ fn main() -> Result<()> {
         ["config"] => {
             let c = config::read()?;
             print!("{:?}", c);
+
+            let s = store::connect()?;
+            s.update_notes(c)?;
+
             Ok(())
         }
 
@@ -38,8 +42,8 @@ fn init(notes_dir: Vec<&str>) -> anyhow::Result<()> {
     config::ensure_dir()?;
     cfg.write()?;
 
-    let s = store::create(cfg)?;
-    s.update_notes()?;
+    let s = store::create()?;
+    s.update_notes(cfg)?;
 
     Ok(())
 }
