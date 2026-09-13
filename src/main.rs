@@ -15,7 +15,11 @@ fn main() -> anyhow::Result<()> {
         ["init"] => anyhow::bail!("needs a note directory"),
         ["init", notes_dir @ ..] => init(notes_dir.to_vec()),
         ["run"] => Ok(()),
-        ["config"] => Ok(()),
+        ["config"] => {
+            let c = config::read()?;
+            print!("{:?}", c);
+            Ok(())
+        }
         ["help"] => Ok(()),
         [_, ..] => anyhow::bail!("unknown command"),
     }

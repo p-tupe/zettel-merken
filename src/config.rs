@@ -1,4 +1,7 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs::{self, File},
+    path::PathBuf,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -15,16 +18,13 @@ impl Config {
         print!("Config loaded {:?}!", self)
     }
 
-    pub fn path(&self) -> anyhow::Result<PathBuf> {
-        let config_dir = get_config_dir()?;
-        return Ok(config_dir.join("config.json"));
-    }
-
     pub fn write(&self) -> anyhow::Result<()> {
-        let contents = serde_json::to_string_pretty(self)?;
-        fs::write(self.path()?, contents)?;
-        Ok(())
+        Ok(fs::write(path()?, serde_json::to_string_pretty(self)?)?)
     }
+}
+
+pub fn path() -> anyhow::Result<PathBuf> {
+    Ok(get_config_dir()?.join("config.json"))
 }
 
 pub fn base(notes_dir: Vec<&str>) -> Config {
@@ -32,4 +32,8 @@ pub fn base(notes_dir: Vec<&str>) -> Config {
         notes: notes_dir.into_iter().map(String::from).collect(),
         exclude: vec![String::from(".*")],
     }
+}
+
+pub fn read() -> anyhow::Result<Config> {
+    Ok(serde_json::from_reader(File::open(path()?)?)?)
 }
