@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/p-tupe/zettel-merken/internal/config"
 	"github.com/p-tupe/zettel-merken/internal/store"
 )
@@ -13,7 +11,7 @@ func dailyRun() error {
 		return err
 	}
 
-	store, err := store.New(cfg)
+	store, err := store.Create(cfg)
 	if err != nil {
 		return err
 	}
@@ -21,14 +19,6 @@ func dailyRun() error {
 	if err = store.UpdateNotes(); err != nil {
 		return err
 	}
-
-	v, err := store.Version()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(cfg)
-	fmt.Println("Sql Version:", v)
 
 	return nil
 }

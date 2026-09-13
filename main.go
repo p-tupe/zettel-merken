@@ -38,20 +38,20 @@ func dispatch(command string, all []string) error {
 	case "init":
 		if len(all) < 3 {
 			return errors.New("need a notes dir with init")
-		}
-
-		if err := initialize.Setup(all[2]); err != nil {
-			return fmt.Errorf("could not initialize, %w", err)
+		} else if err := initialize.Setup(all[2]); err != nil {
+			return err
 		}
 
 	case "config":
-		if err := config.Edit(); err != nil {
-			return fmt.Errorf("cannot opening config, %w", err)
+		if cfg, err := config.Read(); err != nil {
+			return err
+		} else if err := cfg.Edit(); err != nil {
+			return err
 		}
 
 	case "run":
 		if err := dailyRun(); err != nil {
-			return fmt.Errorf("daily run failed, %w", err)
+			return err
 		}
 
 	case "help":

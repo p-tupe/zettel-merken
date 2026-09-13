@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/p-tupe/zettel-merken/internal/config"
 	"github.com/p-tupe/zettel-merken/internal/utils"
@@ -25,26 +27,23 @@ func New(cfg config.Config) (*Store, error) {
 	return &Store{db, cfg}, nil
 }
 
-func Setup() error {
-	db, err := getDB()
+func Create(cfg config.Config) (*Store, error) {
+	s, err := New(cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	createNotes := `create table if not exists notes ( 
 		id integer primary key,
 		title text not null unique,
-		hash text not null unique,
-		size integer not null,
-		mtime text not null,
-		deleted_at text
+		last_seen text not null
 	);`
 
-	if _, err := db.Exec(createNotes); err != nil {
-		return fmt.Errorf("could not create table: %w", err)
+	if _, err := s.db.Exec(createNotes); err != nil {
+		return s, fmt.Errorf("could not create table: %w", err)
 	}
 
-	return nil
+	return s, nil
 }
 
 func getDB() (*sql.DB, error) {
@@ -73,10 +72,26 @@ func (s *Store) UpdateNotes() error {
 		entries = append(entries, newEntries...)
 	}
 
-	for _, e := range entries {
-		fmt.Println(e.Name())
+	var upsertSQL strings.Builder
+	upsertSQL.WriteString("insert into notes (title, last_seen) values")
+	upsertSQL.WriteString(strings.TrimSuffix(strings.Repeat("(?,?),", len(entries)), ","))
+	upsertSQL.WriteString("on conflict(title) do update set last_seen = excluded.last_seen;")
+
+	stmt, err := s.db.Prepare(upsertSQL.String())
+	if err != nil {
+		return err
 	}
 
+	args := make([]any, 0, len(entries)*2)
+	for _, e := range entries {
+		args = append(args, e.Name(), time.Now().UTC().Format(time.RFC3339))
+	}
+
+	if _, err := stmt.Exec(args...); err != nil {
+		return fmt.Errorf("could not execute statement %w", err)
+	}
+
+	s.countNotes()
 	return nil
 }
 
@@ -87,4 +102,15 @@ func (s *Store) Version() (string, error) {
 		return "", fmt.Errorf("could not scan row: %w", err)
 	}
 	return v, nil
+}
+
+// debug only
+func (s *Store) countNotes() {
+	r := s.db.QueryRow(`select count(*) from notes;`)
+	var count string
+	if err := r.Scan(&count); err != nil {
+		panic(err)
+	} else {
+		fmt.Println("Number of notes:", count)
+	}
 }

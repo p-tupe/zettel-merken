@@ -2,11 +2,12 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/p-tupe/zettel-merken/internal/utils"
 )
 
 type Config struct {
@@ -14,26 +15,50 @@ type Config struct {
 	Notes []string `json:"notes"`
 	// Files (or globs) to exlude
 	Exclude []string `json:"exclude"`
+
+	// Metadata, not inside actual json
+	Path string `json:"-"`
 }
 
-func EnsureDir() error {
-	userConfigDir, err := os.UserConfigDir()
+func Create(notesDir string) (Config, error) {
+	var cfg Config
+
+	cfgPath, err := Path()
 	if err != nil {
-		return fmt.Errorf("unable to open config dir at %s: %w", userConfigDir, err)
+		return cfg, err
 	}
 
-	appConfigDir := filepath.Join(userConfigDir, "zettelmerken")
-	if err := os.MkdirAll(appConfigDir, 0o755); err != nil {
-		return fmt.Errorf("unable to create app config dir at %s: %w", appConfigDir, err)
+	if utils.IsFileReadable(cfgPath) {
+		return cfg, fmt.Errorf("config already exists, use `config` command to edit")
 	}
 
-	return nil
+	cfg = Config{
+		Notes:   []string{notesDir},
+		Exclude: []string{".*"},
+		Path:    cfgPath,
+	}
+
+	cfgStr, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return cfg, fmt.Errorf("unable to marshal default config: %w", err)
+	}
+
+	if err := os.WriteFile(cfg.Path, cfgStr, 0o644); err != nil {
+		return cfg, fmt.Errorf("unable to write default config: %w", err)
+	}
+
+	return cfg, nil
 }
 
 func Path() (string, error) {
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", fmt.Errorf("unable to open config dir at %s: %w", userConfigDir, err)
+	}
+
+	appConfigDir := filepath.Join(userConfigDir, "zettelmerken")
+	if err := os.MkdirAll(appConfigDir, 0o755); err != nil {
+		return "", fmt.Errorf("unable to create app config dir at %s: %w", appConfigDir, err)
 	}
 
 	return filepath.Join(userConfigDir, "zettelmerken", "config.json"), nil
@@ -47,68 +72,31 @@ func Read() (Config, error) {
 		return cfg, err
 	}
 
-	cfgFile, err := os.Open(cfgPath)
+	cfgFile, err := os.ReadFile(cfgPath)
 	if err != nil {
 		return cfg, fmt.Errorf("unable to open config file: %w", err)
 	}
-	defer cfgFile.Close()
 
-	err = json.NewDecoder(cfgFile).Decode(&cfg)
+	err = json.Unmarshal(cfgFile, &cfg)
 	if err != nil {
 		return cfg, fmt.Errorf("unable to decode config json: %w", err)
 	}
 
+	cfg.Path = cfgPath
+
 	return cfg, nil
 }
 
-func Edit() error {
-	cfgPath, err := Path()
-	if err != nil {
-		return err
-	}
-
+func (cfg Config) Edit() error {
 	editor := os.Getenv("VISUAL")
 	if editor == "" {
 		editor = os.Getenv("EDITOR")
 		if editor == "" {
-			return errors.New("no $VISUAL or $EDITOR set in environment")
+			return fmt.Errorf("no $VISUAL or $EDITOR set in environment")
 		}
 	}
 
-	cmd := exec.Command(editor, cfgPath)
+	cmd := exec.Command(editor, cfg.Path)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func Setup(notesDir string) error {
-	if err := EnsureDir(); err != nil {
-		return err
-	}
-
-	cfgPath, err := Path()
-	if err != nil {
-		return err
-	}
-
-	cfgFile, err := os.Create(cfgPath)
-	if err != nil {
-		return fmt.Errorf("could not create config file: %w", err)
-	}
-	defer cfgFile.Close()
-
-	defaultCfg := Config{
-		Notes:   []string{notesDir},
-		Exclude: []string{".*"},
-	}
-
-	err = json.NewEncoder(cfgFile).Encode(defaultCfg)
-	if err != nil {
-		return fmt.Errorf("unable to write default config: %w", err)
-	}
-
-	return nil
+	return cmd.Run()
 }
