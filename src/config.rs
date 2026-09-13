@@ -1,7 +1,6 @@
-use std::{
-    fs::{self, File},
-    path::PathBuf,
-};
+use std::{fs, path::PathBuf};
+
+use anyhow::{Result, bail};
 
 use serde::{Deserialize, Serialize};
 
@@ -13,20 +12,6 @@ pub struct Config {
     exclude: Vec<String>,
 }
 
-impl Config {
-    pub fn load(&self) {
-        print!("Config loaded {:?}!", self)
-    }
-
-    pub fn write(&self) -> anyhow::Result<()> {
-        Ok(fs::write(path()?, serde_json::to_string_pretty(self)?)?)
-    }
-}
-
-pub fn path() -> anyhow::Result<PathBuf> {
-    Ok(get_config_dir()?.join("config.json"))
-}
-
 pub fn base(notes_dir: Vec<&str>) -> Config {
     Config {
         notes: notes_dir.into_iter().map(String::from).collect(),
@@ -34,6 +19,23 @@ pub fn base(notes_dir: Vec<&str>) -> Config {
     }
 }
 
-pub fn read() -> anyhow::Result<Config> {
-    Ok(serde_json::from_reader(File::open(path()?)?)?)
+impl Config {
+    pub fn write(&self) -> Result<()> {
+        if fs::exists(path()?)? {
+            bail!("config already exists");
+        }
+        Ok(fs::write(path()?, serde_json::to_string_pretty(self)?)?)
+    }
+}
+
+pub fn ensure_dir() -> Result<()> {
+    Ok(fs::create_dir_all(get_config_dir()?)?)
+}
+
+pub fn path() -> Result<PathBuf> {
+    Ok(get_config_dir()?.join("config.json"))
+}
+
+pub fn read() -> Result<Config> {
+    Ok(serde_json::from_reader(fs::File::open(path()?)?)?)
 }

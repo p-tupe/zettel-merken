@@ -1,4 +1,4 @@
-use std::{env, fs, path::PathBuf};
+use std::{env, path::PathBuf};
 
 pub fn get_config_dir() -> anyhow::Result<PathBuf> {
     let dir = env::var_os("XDG_CONFIG_HOME")
@@ -9,6 +9,5 @@ pub fn get_config_dir() -> anyhow::Result<PathBuf> {
         .ok_or_else(|| anyhow::anyhow!("could not find config dir"))?
         .join("zettelmerken");
 
-    fs::create_dir_all(&dir)?;
     Ok(dir)
 }
