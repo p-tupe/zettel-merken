@@ -1,4 +1,8 @@
-use std::{fs, path::PathBuf};
+use std::{
+    env, fs,
+    path::PathBuf,
+    process::{Command, Stdio},
+};
 
 use anyhow::Result;
 
@@ -44,4 +48,26 @@ pub fn path() -> Result<PathBuf> {
 
 pub fn read() -> Result<Config> {
     Ok(serde_json::from_reader(fs::File::open(path()?)?)?)
+}
+
+pub fn edit() -> Result<()> {
+    let path = path()?;
+    let path = path
+        .to_str()
+        .ok_or(anyhow::anyhow!("could not find config path"))?;
+
+    Ok(env::var_os("VISUAL")
+        .map_or(env::var_os("EDITOR"), Some)
+        .map_or_else(
+            || print!("{}", path),
+            |editor| {
+                Command::new(editor)
+                    .arg(path)
+                    .stdin(Stdio::inherit())
+                    .stdout(Stdio::inherit())
+                    .stderr(Stdio::inherit())
+                    .output()
+                    .expect("something went wrong");
+            },
+        ))
 }

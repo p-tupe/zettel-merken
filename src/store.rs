@@ -19,8 +19,11 @@ impl Store {
         let tx = self.conn.transaction()?;
 
         for entry in get_note_entries(&self.cfg)? {
-            let mut stmt = tx
-                .prepare("insert into notes (title, path) values (?, ?) on conflict do nothing;")?;
+            let mut stmt = tx.prepare(
+                "insert into notes (title, path) values (?, ?)
+on conflict(path) do update
+set last_touched = current_timestamp;",
+            )?;
 
             let Some(filename) = entry.file_name().to_str() else {
                 continue;
@@ -40,7 +43,7 @@ impl Store {
         self.conn.execute(
             "create table if not exists notes (
         title text not null,
-        path text not null,
+        path text not null unique,
         last_touched datetime default current_timestamp
     );",
             (),

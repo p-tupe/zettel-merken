@@ -14,27 +14,16 @@ fn main() -> Result<()> {
         .as_slice()
     {
         [] => bail!("needs a command"),
-
         ["init"] => bail!("needs a note directory"),
-
         ["init", notes_dir @ ..] => init(notes_dir.to_vec()),
-
-        ["run"] => Ok(()),
-
-        ["config"] => {
-            let c = config::read()?;
-            print!("{:?}", c);
-
-            Ok(())
-        }
-
-        ["help"] => Ok(()),
-
+        ["config"] => config::edit(),
+        ["help"] => Ok(print_help()),
+        ["run"] => daily_run(),
         [_, ..] => bail!("unknown command"),
     }
 }
 
-fn init(notes_dir: Vec<&str>) -> anyhow::Result<()> {
+fn init(notes_dir: Vec<&str>) -> Result<()> {
     config::ensure_dir()?;
 
     let mut cfg = config::Config::default();
@@ -44,6 +33,29 @@ fn init(notes_dir: Vec<&str>) -> anyhow::Result<()> {
     let mut s = store::new(cfg)?;
     s.migrate()?;
     s.update_notes()?;
+
+    Ok(())
+}
+
+fn print_help() {
+    println!(
+        r#"zettel-merken is your daily review helper
+
+Usage:
+
+  zettel-merken init <notes_dir>    Initial setup
+  zettel-merken config              Opens config file
+  zettel-merken help                Show this help
+  zettel-merken run                 Daily review run"#
+    );
+}
+
+fn daily_run() -> Result<()> {
+    let cfg = config::read()?;
+    let mut st = store::new(cfg)?;
+    st.update_notes()?;
+
+    // TODO: actual run
 
     Ok(())
 }
