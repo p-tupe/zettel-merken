@@ -6,7 +6,7 @@ use crate::{
 };
 
 use anyhow::Result;
-use rusqlite::{Connection, params_from_iter};
+use rusqlite::{Connection, params};
 
 #[derive(Debug)]
 pub struct Store {
@@ -15,24 +15,25 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn update_notes(&self) -> Result<()> {
-        let mut stmt = String::from("insert into notes (title, path) values ");
-        let mut entries = vec![];
-        for e in get_note_entries(self.cfg.clone())? {
-            if let Some(title) = e.file_name() {
-                if let Some(title) = title.to_str().map(String::from) {
-                    if let Some(path) = e.as_path().to_str().map(String::from) {
-                        stmt.push_str("(?, ?),");
-                        entries.push(title);
-                        entries.push(path);
-                    }
-                }
-            }
+    pub fn update_notes(&mut self) -> Result<()> {
+        let tx = self.conn.transaction()?;
+
+        for entry in get_note_entries(&self.cfg)? {
+            let mut stmt = tx
+                .prepare("insert into notes (title, path) values (?, ?) on conflict do nothing;")?;
+
+            let Some(filename) = entry.file_name().to_str() else {
+                continue;
+            };
+
+            let Some(pathname) = entry.path().to_str() else {
+                continue;
+            };
+
+            stmt.execute(params![filename, pathname])?;
         }
-        if let Some(stmt) = stmt.strip_suffix(",") {
-            self.conn.execute(stmt, params_from_iter(entries))?;
-        }
-        Ok(())
+
+        Ok(tx.commit()?)
     }
 
     pub fn migrate(&self) -> Result<()> {

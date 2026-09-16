@@ -1,7 +1,7 @@
 use std::{env, path::PathBuf};
 
 use globset::Glob;
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
 
 use crate::config;
 
@@ -17,22 +17,22 @@ pub fn get_config_dir() -> anyhow::Result<PathBuf> {
     Ok(dir)
 }
 
-pub fn get_note_entries(cfg: config::Config) -> anyhow::Result<Vec<PathBuf>> {
+pub fn get_note_entries(cfg: &config::Config) -> anyhow::Result<Vec<DirEntry>> {
     let mut gb = globset::GlobSetBuilder::new();
-    for e in cfg.exclude {
+    for e in &cfg.exclude {
         gb.add(Glob::new(&e)?);
     }
     let excl = gb.build()?;
 
-    let mut entries: Vec<PathBuf> = vec![];
-    for dir in cfg.notes {
+    let mut entries = vec![];
+    for dir in &cfg.notes {
         for entry in WalkDir::new(dir)
             .into_iter()
             .filter_entry(|e| e.depth() == 0 || !excl.is_match(e.path()))
         {
             let entry = entry?;
             if entry.file_type().is_file() {
-                entries.push(entry.path().to_path_buf());
+                entries.push(entry);
             }
         }
     }

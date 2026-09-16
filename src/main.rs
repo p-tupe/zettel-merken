@@ -41,7 +41,7 @@ fn init(notes_dir: Vec<&str>) -> anyhow::Result<()> {
     cfg.notes.extend(notes_dir.iter().map(|&s| String::from(s)));
     cfg.write()?;
 
-    let s = store::new(cfg)?;
+    let mut s = store::new(cfg)?;
     s.migrate()?;
     s.update_notes()?;
 
