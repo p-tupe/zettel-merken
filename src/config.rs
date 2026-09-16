@@ -6,16 +6,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::get_config_dir;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
+    pub version: i8,
     pub notes: Vec<String>,
     pub exclude: Vec<String>,
 }
 
-pub fn base(notes_dir: Vec<&str>) -> Config {
-    Config {
-        notes: notes_dir.into_iter().map(String::from).collect(),
-        exclude: vec![String::from(".*")],
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            version: 1,
+            notes: vec![],
+            exclude: vec![String::from(".*")],
+        }
     }
 }
 

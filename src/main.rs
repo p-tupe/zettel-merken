@@ -25,9 +25,6 @@ fn main() -> Result<()> {
             let c = config::read()?;
             print!("{:?}", c);
 
-            let s = store::connect()?;
-            s.update_notes(c)?;
-
             Ok(())
         }
 
@@ -38,12 +35,15 @@ fn main() -> Result<()> {
 }
 
 fn init(notes_dir: Vec<&str>) -> anyhow::Result<()> {
-    let cfg = config::base(notes_dir);
     config::ensure_dir()?;
+
+    let mut cfg = config::Config::default();
+    cfg.notes.extend(notes_dir.iter().map(|&s| String::from(s)));
     cfg.write()?;
 
-    let s = store::create()?;
-    s.update_notes(cfg)?;
+    let s = store::new(cfg)?;
+    s.migrate()?;
+    s.update_notes()?;
 
     Ok(())
 }

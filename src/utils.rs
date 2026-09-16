@@ -31,8 +31,9 @@ pub fn get_note_entries(cfg: config::Config) -> anyhow::Result<Vec<PathBuf>> {
             .filter_entry(|e| e.depth() == 0 || !excl.is_match(e.path()))
         {
             let entry = entry?;
-
-            entries.push(entry.path().to_path_buf());
+            if entry.file_type().is_file() {
+                entries.push(entry.path().to_path_buf());
+            }
         }
     }
 
