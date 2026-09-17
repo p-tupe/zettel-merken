@@ -1,8 +1,4 @@
-use std::{
-    env, fs,
-    path::PathBuf,
-    process::{Command, Stdio},
-};
+use std::{env, fs, path::PathBuf, process::Command};
 
 use anyhow::Result;
 
@@ -52,22 +48,12 @@ pub fn read() -> Result<Config> {
 
 pub fn edit() -> Result<()> {
     let path = path()?;
-    let path = path
-        .to_str()
-        .ok_or(anyhow::anyhow!("could not find config path"))?;
 
-    Ok(env::var_os("VISUAL")
-        .map_or(env::var_os("EDITOR"), Some)
-        .map_or_else(
-            || print!("{}", path),
-            |editor| {
-                Command::new(editor)
-                    .arg(path)
-                    .stdin(Stdio::inherit())
-                    .stdout(Stdio::inherit())
-                    .stderr(Stdio::inherit())
-                    .output()
-                    .expect("something went wrong");
-            },
-        ))
+    let Some(editor) = env::var_os("VISUAL").or_else(|| env::var_os("EDITOR")) else {
+        println!("{}", path.display());
+        return Ok(());
+    };
+
+    let _ = Command::new(editor).arg(path).status()?;
+    Ok(())
 }

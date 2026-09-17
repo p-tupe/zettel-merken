@@ -2,11 +2,13 @@ use std::path::PathBuf;
 
 use crate::{
     config::Config,
+    schedule::Schedule,
     utils::{get_config_dir, get_note_entries},
 };
 
 use anyhow::Result;
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, config::DbConfig, params};
+use serde_json::json;
 
 #[derive(Debug)]
 pub struct Store {
@@ -20,9 +22,9 @@ impl Store {
 
         for entry in get_note_entries(&self.cfg)? {
             let mut stmt = tx.prepare(
-                "insert into notes (title, path) values (?, ?)
+                "insert into notes (title, path, schedule) values (?, ?, ?)
 on conflict(path) do update
-set last_touched = current_timestamp;",
+set last_updated = current_timestamp;",
             )?;
 
             let Some(filename) = entry.file_name().to_str() else {
@@ -33,10 +35,18 @@ set last_touched = current_timestamp;",
                 continue;
             };
 
-            stmt.execute(params![filename, pathname])?;
+            stmt.execute(params![
+                filename,
+                pathname,
+                json!(Schedule::new()).to_string()
+            ])?;
         }
 
         Ok(tx.commit()?)
+    }
+
+    pub fn up_for_review(&self) -> Result<()> {
+        Ok(())
     }
 
     pub fn migrate(&self) -> Result<()> {
@@ -44,7 +54,8 @@ set last_touched = current_timestamp;",
             "create table if not exists notes (
         title text not null,
         path text not null unique,
-        last_touched datetime default current_timestamp
+        last_updated datetime default current_timestamp,
+        schedule jsonb -- {reviews: [...], next: '', last: ''}
     );",
             (),
         )?;
@@ -54,10 +65,9 @@ set last_touched = current_timestamp;",
 }
 
 pub fn new(cfg: Config) -> Result<Store> {
-    Ok(Store {
-        conn: Connection::open(path()?)?,
-        cfg,
-    })
+    let conn = Connection::open(path()?)?;
+    conn.set_db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY, true)?;
+    Ok(Store { conn, cfg })
 }
 
 pub fn path() -> Result<PathBuf> {

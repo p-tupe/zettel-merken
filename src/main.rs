@@ -2,6 +2,7 @@ use anyhow::{Result, bail};
 use std::env;
 
 mod config;
+mod schedule;
 mod store;
 mod utils;
 
@@ -17,7 +18,10 @@ fn main() -> Result<()> {
         ["init"] => bail!("needs a note directory"),
         ["init", notes_dir @ ..] => init(notes_dir.to_vec()),
         ["config"] => config::edit(),
-        ["help"] => Ok(print_help()),
+        ["help"] => {
+            print_help();
+            Ok(())
+        }
         ["run"] => daily_run(),
         [_, ..] => bail!("unknown command"),
     }
@@ -54,8 +58,6 @@ fn daily_run() -> Result<()> {
     let cfg = config::read()?;
     let mut st = store::new(cfg)?;
     st.update_notes()?;
-
-    // TODO: actual run
-
+    st.up_for_review()?;
     Ok(())
 }

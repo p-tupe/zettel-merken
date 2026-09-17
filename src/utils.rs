@@ -20,7 +20,7 @@ pub fn get_config_dir() -> anyhow::Result<PathBuf> {
 pub fn get_note_entries(cfg: &config::Config) -> anyhow::Result<Vec<DirEntry>> {
     let mut gb = globset::GlobSetBuilder::new();
     for e in &cfg.exclude {
-        gb.add(Glob::new(&e)?);
+        gb.add(Glob::new(e)?);
     }
     let excl = gb.build()?;
 
