@@ -18,10 +18,7 @@ fn main() -> Result<()> {
         ["init"] => bail!("needs a note directory"),
         ["init", notes_dir @ ..] => init(notes_dir.to_vec()),
         ["config"] => config::edit(),
-        ["help"] => {
-            print_help();
-            Ok(())
-        }
+        ["help"] => print_help(),
         ["run"] => daily_run(),
         [_, ..] => bail!("unknown command"),
     }
@@ -36,12 +33,12 @@ fn init(notes_dir: Vec<&str>) -> Result<()> {
 
     let mut s = store::new(cfg)?;
     s.migrate()?;
-    s.update_notes()?;
+    s.sync()?;
 
     Ok(())
 }
 
-fn print_help() {
+fn print_help() -> Result<()> {
     println!(
         r#"zettel-merken is your daily review helper
 
@@ -52,12 +49,14 @@ Usage:
   zettel-merken help                Show this help
   zettel-merken run                 Daily review run"#
     );
+
+    Ok(())
 }
 
 fn daily_run() -> Result<()> {
     let cfg = config::read()?;
     let mut st = store::new(cfg)?;
-    st.update_notes()?;
-    st.up_for_review()?;
+    st.sync()?;
+    st.review()?;
     Ok(())
 }

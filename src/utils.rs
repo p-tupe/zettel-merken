@@ -1,9 +1,8 @@
-use std::{env, path::PathBuf};
-
-use globset::Glob;
-use walkdir::{DirEntry, WalkDir};
-
 use crate::config;
+use anyhow::Result;
+use globset::Glob;
+use std::{env, path::PathBuf};
+use walkdir::{DirEntry, WalkDir};
 
 pub fn get_config_dir() -> anyhow::Result<PathBuf> {
     let dir = env::var_os("XDG_CONFIG_HOME")
@@ -38,4 +37,14 @@ pub fn get_note_entries(cfg: &config::Config) -> anyhow::Result<Vec<DirEntry>> {
     }
 
     Ok(entries)
+}
+
+pub fn local_notification(title: &str, subtitle: &str) -> Result<()> {
+    use mac_notification_sys::*;
+
+    let bundle = get_bundle_identifier_or_default("tips");
+    set_application(&bundle).unwrap();
+    send_notification(title, None, subtitle, None).unwrap();
+
+    Ok(())
 }

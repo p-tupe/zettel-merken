@@ -1,9 +1,8 @@
-use std::ops::Add;
-
 use serde::{Deserialize, Serialize};
+use std::ops::Add;
 use time::{UtcDateTime, ext::NumericalDuration};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Schedule {
     pub last: Option<String>,
     pub next: Option<String>,
@@ -19,9 +18,8 @@ impl Schedule {
         }
     }
 
-    pub fn _increment(self) -> Self {
-        // TODO: add max count
-        let count = self.count + 1;
+    pub fn increment(&self) -> Self {
+        let count = if self.count == 10 { 10 } else { self.count + 1 };
         let last = Some(UtcDateTime::now().to_string());
         let next = Some(
             UtcDateTime::now()

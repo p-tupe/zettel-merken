@@ -1,16 +1,23 @@
+use crate::utils::{get_config_dir, local_notification};
+use anyhow::{Result, bail};
+use serde::{Deserialize, Serialize};
 use std::{env, fs, path::PathBuf, process::Command};
 
-use anyhow::Result;
-
-use serde::{Deserialize, Serialize};
-
-use crate::utils::get_config_dir;
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum Notification {
+    Local,
+    Mail { id: String },       // todo
+    Slack { channel: String }, // todo
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub version: i8,
     pub notes: Vec<String>,
     pub exclude: Vec<String>,
+    pub max_per_review: i8,
+    pub notification: Notification,
 }
 
 impl Default for Config {
@@ -19,6 +26,8 @@ impl Default for Config {
             version: 1,
             notes: vec![],
             exclude: vec![String::from(".*")],
+            max_per_review: 5,
+            notification: Notification::Local,
         }
     }
 }
@@ -31,6 +40,22 @@ impl Config {
             .open(path()?)?;
 
         Ok(serde_json::to_writer_pretty(f, self)?)
+    }
+
+    // find a better place later
+    pub fn notify(&self, notes: Vec<String>) -> Result<()> {
+        use Notification::*;
+
+        let summary = if notes.len() > 0 {
+            &notes.join(", ")
+        } else {
+            "all good today!"
+        };
+
+        match self.notification {
+            Local => local_notification("Zettel Merken Daily Review List", summary),
+            _ => bail!("only local notification implemented"),
+        }
     }
 }
 
