@@ -1,4 +1,5 @@
 use crate::utils::{get_config_dir, local_notification};
+
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use std::{env, fs, path::PathBuf, process::Command};

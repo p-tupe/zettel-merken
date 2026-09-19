@@ -4,14 +4,6 @@
 <p align="center"><strong>Supercharge your learning by combining two of the most revolutionary ideas in knowledge enhancement!</strong></p>
 <hr />
 
-<p align="center">
-<img alt="GitHub tag (latest SemVer)" src="https://img.shields.io/github/v/tag/empat94/zettel-merken">
-  <a href="https://github.com/EMPAT94/zettel-merken/blob/main/LICENSE"><img alt="GitHub license" src="https://img.shields.io/github/license/EMPAT94/zettel-merken"></a>
-  <a href="https://github.com/EMPAT94/zettel-merken/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/EMPAT94/zettel-merken"></a>
-  <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/empat94/zettel-merken">
-
-<br /> <br />
-
 # Introduction
 
 Zettel stands for "note" and Merken stands for "remember" in German. A literal translation would imply "Remember your notes", but that is an overly simplistic definition of what the title stands for.
@@ -137,54 +129,93 @@ Excerpt from [e-student.org](https://e-student.org/spaced-repetition/):
 
 It is quite difficult to manually track hundreds of notes and review a set everyday. You'd have to keep logs of when each topic was visited, how many repetitions were completed, when the next review will be and so on. Quite cumbersome!
 
-That is were Zettel Merken comes into play. Not only does this program keep track of your every note and its schedule, it also automatically emails notes that are due for review for the day! How awesome is that? It is quite easy to use too!
+That is were Zettel Merken comes into play. Not only does this program keep track of your every note and its schedule, it also automatically notifies about notes that are due for review for the day! How awesome is that? It is quite easy to use too!
 
 ## Setup
 
-**_NOTE: Code was written in and tested on Manjaro Linux (kernel 5.18) with Python 3.10 (compatible with 3.9)_**
+**_NOTE: Code was written in and tested on MacOS 26.6 with Rust edition 2024_**
 
 1. Install
 
-   ```shell
-   python -m pip install zettelmerken
-   ```
+```bash
+cargo install zettel-merken
+```
 
-2. Configure
+2. Initialize
 
-   ```shell
-   python -m zettelmerken --config
-   ```
+```bash
+zettel-merken init <notes_dir>
+```
 
-   Create a `config.json` in either `~/.config/zettel_merken/` or `~/zettel_merken`, and open in default editor.
+Create a `config.json` (and `zettelmerken.db`) in either `~/.config/zettelmerken/` or your systems default config directory. I'd say back these up somewhere on the regular.
 
-3. Initialize
+3. Run
 
-   ```shell
-   python -m zettelmerken --init
-   ```
+```bash
+zettel-merken run
+```
 
-   Create systemd units to exectute zettelmerken on a daily basis.
+My goal is to have the program be fire 'n forget type. You can edit the config anytime, it'll pick it up on each run and work accordingly. It will also sync your notes' folders before each run so adding/removing notes does not require changing your review setup.
 
-- Help
+## Configure
 
-  ```shell
-  python -m zettelmerken --help
-  ```
+```bash
+zettel-merken config
+```
 
-## TODOs
+This opens the config file in your default editor. A default config is created on init.
 
-### v0.2
+```json
+{
+  "version": ..,
+  "notes": [ .. ],
+  "exclude": [ ".*" ],
+  "max_per_review": 5,
+  "notification": "local"
+}
+```
 
-- [ ] Add slack webhook alternative to email
-- [ ] Add a wiki
+`version` is used internally to track upgrades.
 
-### v0.3
+`notes` is a list of directories you'd like to include for review. Initially, it will contain the `notes_dir` you supply during init; you may add other paths in there.
 
-- [ ] MacOS Support
+`exclude` is a glob of files to exclude, following standard unix glob patterns.
 
-## Maybes
+`max_per_review` is the maximum number of notes to be reviewed in a single run. The list is sorted in the ascending order of last modified time, so your oldest notes bubble up first for review.
 
-- [ ] config.toml instead of config.json?
-- [ ] Windows Support?
-- [ ] Per-note schedule?
-- [ ] Docker Image?
+`notification` is either `local`, `mail` or `slack`. The latter two are wip, and `local` is currently only tested on macos.
+
+## Macos launchd for daily run
+
+1. Save this in `~/Library/LaunchAgents/com.pritesh.zettelmerken.plist`
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.pritesh.zettelmerken</string>
+    <key>ServiceDescription</key>
+    <string>Zettel Merken Daily Review Run</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/pritesh/.cargo/bin/zettel-merken</string>
+      <string>run</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+      <key>Hour</key>
+      <integer>11</integer>
+      <key>Minute</key>
+      <integer>00</integer>
+    </dict>
+  </dict>
+</plist>
+```
+
+2. Run the following command to enable
+
+```bash
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pritesh.zettelmerken.plist
+```

@@ -1,7 +1,3 @@
-use std::{fs::metadata, path::PathBuf};
-
-use time::UtcDateTime;
-
 use crate::{
     config::Config,
     utils::{get_config_dir, get_next_review_date, get_note_entries},
@@ -10,6 +6,8 @@ use crate::{
 use anyhow::Result;
 use rusqlite::{Connection, config::DbConfig, params};
 use serde_json::json;
+use std::{fs::metadata, path::PathBuf};
+use time::UtcDateTime;
 
 #[derive(Debug)]
 pub struct Store {
@@ -63,7 +61,8 @@ set last_sync = current_timestamp;",
 
     pub fn review(&self) -> Result<()> {
         let mut stmt = self.conn.prepare(&format!(
-            "select title, path, next_review, prev_reviews from notes where next_review > current_timestamp order by mtime limit {};",
+            "select title, path, next_review, prev_reviews from notes
+where next_review < current_timestamp order by mtime limit {};",
             self.cfg.max_per_review
         ))?;
 
@@ -96,13 +95,12 @@ set last_sync = current_timestamp;",
     pub fn migrate(&self) -> Result<()> {
         self.conn.execute(
             "create table if not exists notes (
-        title text not null,
-        path text not null unique,
-        mtime text not null, -- file's modification time
-        last_sync datetime default current_timestamp, -- sweep during daily run
-        prev_reviews jsonb default '[]', -- json array of timestamps
-        next_review datetime
-    );",
+title text not null,
+path text not null unique,
+mtime text not null, -- file's modification time
+last_sync datetime default current_timestamp, -- sweep during daily run
+prev_reviews jsonb default '[]', -- json array of timestamps
+next_review datetime);",
             (),
         )?;
 
