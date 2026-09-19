@@ -12,3 +12,8 @@ pyvenv.cfg
 dist
 
 *.db
+
+
+# Added by cargo
+
+/target
