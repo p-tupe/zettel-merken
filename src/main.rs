@@ -2,7 +2,6 @@ use anyhow::{Result, bail};
 use std::env;
 
 mod config;
-mod schedule;
 mod store;
 mod utils;
 

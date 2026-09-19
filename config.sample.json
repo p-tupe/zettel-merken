@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "notes": [
+    "/Users/pritesh/Notes/interests/learning-french"
+  ],
+  "exclude": [
+    ".*"
+  ],
+  "max_per_review": 5,
+  "notification": "local"
+}

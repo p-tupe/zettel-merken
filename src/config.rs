@@ -7,8 +7,8 @@ use std::{env, fs, path::PathBuf, process::Command};
 #[serde(rename_all = "lowercase")]
 pub enum Notification {
     Local,
-    Mail { id: String },       // todo
-    Slack { channel: String }, // todo
+    Mail { id: String },       // todo: https://docs.rs/lettre/latest/lettre/
+    Slack { channel: String }, // todo: https://docs.rs/slack-hook/latest/slack_hook/
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
