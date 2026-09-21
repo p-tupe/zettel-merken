@@ -1,7 +1,16 @@
 [package]
 name = "zettel-merken"
+description = "Supercharge your learning using zettelkasten and spaced repetition"
 version = "0.1.0"
 edition = "2024"
+authors = ["Pritesh Tupe <mail@priteshtupe.com>"]
+documentation = "https://github.com/p-tupe/zettel-merken"
+readme = "README.md"
+homepage = "https://github.com/p-tupe/zettel-merken"
+repository = "https://github.com/p-tupe/zettel-merken"
+license = "MIT"
+keywords = ["knowledge", "management", "notification"]
+categories = ["command-line-utilities"]
 
 [profile.dev]
 incremental = true
