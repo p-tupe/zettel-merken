@@ -1,4 +1,4 @@
-<img src="https://nextcloud.priteshtupe.com/s/DT2KJDTgTmQy5Rc/preview" alt="Zettel Merken Image">
+<div align="center"> <img src="https://raw.githubusercontent.com/p-tupe/zettel-merken/refs/heads/main/logo.png" alt="Zettel Merken Image"> </div>
 
 <hr />
 <p align="center"><strong>Supercharge your learning by combining two of the most revolutionary ideas in knowledge enhancement!</strong></p>
@@ -8,16 +8,68 @@
 
 Zettel stands for "note" and Merken stands for "remember" in German. A literal translation would imply "Remember your notes", but that is an overly simplistic definition of what the title stands for.
 
-To be precise, Zettel Merken is a fusion of two impactful ideas in the field of knowledge management and learning enhancement: "Zettelkasten" and "Spaced Repetition".
+To be precise, Zettel Merken is a fusion of two impactful ideas in the field of knowledge management and learning enhancement: "Zettelkasten" and "Spaced Repetition". See [#What-is-Zettelkasten?] for more.
+
+## Setup
+
+**_NOTE: Code was written in and tested on MacOS 26.6 with Rust edition 2024_**
+
+1. Install
+
+```bash
+cargo install zettel-merken
+```
+
+2. Initialize
+
+```bash
+zettel-merken init <notes_dir>
+```
+
+Create a `config.json` (and `zettelmerken.db`) in either `~/.config/zettelmerken/` or your systems default config directory. I'd say back these up somewhere on the regular.
+
+3. Run
+
+```bash
+zettel-merken run
+```
+
+My goal is to have the program be fire 'n forget type. You can edit the config anytime, it'll pick it up on each run and work accordingly. It will also sync your notes' folders before each run so adding/removing notes does not require changing your review setup. The idea is to tie this in with a launchd/systemd like runner, see [#Macos-launchd-for-daily-run] for an example.
+
+## Configure
+
+```bash
+zettel-merken config
+```
+
+This opens the config file in your default editor. A default config is created on init.
+
+```json
+{
+  "version": ..,
+  "notes": [ .. ],
+  "exclude": [ ".*" ],
+  "max_per_review": 5,
+  "notification": "local"
+}
+```
+
+`version` is used internally to track upgrades.
+
+`notes` is a list of directories you'd like to include for review. Initially, it will contain the `notes_dir` you supply during init; you may add other paths in there.
+
+`exclude` is a glob of files to exclude, following standard unix glob patterns.
+
+`max_per_review` is the maximum number of notes to be reviewed in a single run. The list is sorted in the ascending order of last modified time, so your oldest notes bubble up first for review.
+
+`notification` is either `local`, `mail` or `slack`. The latter two are wip, and `local` is currently only tested on macos.
 
 ## What is Zettelkasten?
 
 The [Wikipedia article](https://en.wikipedia.org/wiki/Zettelkasten) defines zettelkasten as "The zettelkasten is a system of note-taking and personal knowledge management used in research and study".
 
 <br />
-<div align="center">
-<a title="David B. Clear, CC BY-SA 4.0 &lt;https://creativecommons.org/licenses/by-sa/4.0&gt;, via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:Zettelkasten_paper_schematic.png"><img width="512" alt="Zettelkasten paper schematic" src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Zettelkasten_paper_schematic.png/512px-Zettelkasten_paper_schematic.png"></a>
-</div>
+<div align="center"> <img src="https://raw.githubusercontent.com/p-tupe/zettel-merken/refs/heads/main/zettelkasten.png" alt="Zettel Kasten Image"> </div>
 <br />
 
 [zettelkasten.de](https://zettelkasten.de/introduction/) is a wonderful little site that is all about, well, zettelkasten. Do read the [introduction](https://zettelkasten.de/introduction/). To pick an excerpt from there:
@@ -119,7 +171,7 @@ Excerpt from [Wikipedia article](https://en.wikipedia.org/wiki/Spaced_repetition
 
 <br />
 <div align="center">
-<a title="The original uploader was Icez at English Wikipedia., Public domain, via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File:ForgettingCurve.svg"><img style="background-color:white" width="256" alt="ForgettingCurve" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/ForgettingCurve.svg/256px-ForgettingCurve.svg.png"></a>
+<div align="center"> <img src="https://raw.githubusercontent.com/p-tupe/zettel-merken/refs/heads/main/spaced-repetition.png" alt="Spaced Repetition Image"> </div>
 </div>
 <br />
 
@@ -131,60 +183,6 @@ It is quite difficult to manually track hundreds of notes and review a set every
 
 That is were Zettel Merken comes into play. Not only does this program keep track of your every note and its schedule, it also automatically notifies about notes that are due for review for the day! How awesome is that? It is quite easy to use too!
 
-## Setup
-
-**_NOTE: Code was written in and tested on MacOS 26.6 with Rust edition 2024_**
-
-1. Install
-
-```bash
-cargo install zettel-merken
-```
-
-2. Initialize
-
-```bash
-zettel-merken init <notes_dir>
-```
-
-Create a `config.json` (and `zettelmerken.db`) in either `~/.config/zettelmerken/` or your systems default config directory. I'd say back these up somewhere on the regular.
-
-3. Run
-
-```bash
-zettel-merken run
-```
-
-My goal is to have the program be fire 'n forget type. You can edit the config anytime, it'll pick it up on each run and work accordingly. It will also sync your notes' folders before each run so adding/removing notes does not require changing your review setup.
-
-## Configure
-
-```bash
-zettel-merken config
-```
-
-This opens the config file in your default editor. A default config is created on init.
-
-```json
-{
-  "version": ..,
-  "notes": [ .. ],
-  "exclude": [ ".*" ],
-  "max_per_review": 5,
-  "notification": "local"
-}
-```
-
-`version` is used internally to track upgrades.
-
-`notes` is a list of directories you'd like to include for review. Initially, it will contain the `notes_dir` you supply during init; you may add other paths in there.
-
-`exclude` is a glob of files to exclude, following standard unix glob patterns.
-
-`max_per_review` is the maximum number of notes to be reviewed in a single run. The list is sorted in the ascending order of last modified time, so your oldest notes bubble up first for review.
-
-`notification` is either `local`, `mail` or `slack`. The latter two are wip, and `local` is currently only tested on macos.
-
 ## Macos launchd for daily run
 
 1. Save this in `~/Library/LaunchAgents/com.pritesh.zettelmerken.plist`
@@ -195,12 +193,13 @@ This opens the config file in your default editor. A default config is created o
 <plist version="1.0">
   <dict>
     <key>Label</key>
-    <string>com.pritesh.zettelmerken</string>
+    <string>com.ptupe.zettelmerken</string>
     <key>ServiceDescription</key>
     <string>Zettel Merken Daily Review Run</string>
     <key>ProgramArguments</key>
     <array>
-      <string>/Users/pritesh/.cargo/bin/zettel-merken</string>
+      <!-- Replace your_username with whatever you have -->
+      <string>/Users/your_username/.cargo/bin/zettel-merken</string>
       <string>run</string>
     </array>
     <key>StartCalendarInterval</key>
@@ -217,5 +216,5 @@ This opens the config file in your default editor. A default config is created o
 2. Run the following command to enable
 
 ```bash
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pritesh.zettelmerken.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ptupe.zettelmerken.plist
 ```
