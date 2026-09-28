@@ -69,7 +69,12 @@ This opens the config file in your default editor. A default config is created o
 The [Wikipedia article](https://en.wikipedia.org/wiki/Zettelkasten) defines zettelkasten as "The zettelkasten is a system of note-taking and personal knowledge management used in research and study".
 
 <br />
-<div align="center"> <img src="https://raw.githubusercontent.com/p-tupe/zettel-merken/refs/heads/main/zettelkasten.png" alt="Zettel Kasten Image"> </div>
+<div align="center">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/p-tupe/zettel-merken/refs/heads/main/zettelkasten.png">
+      <img src="https://raw.githubusercontent.com/p-tupe/zettel-merken/refs/heads/main/zettelkasten-light.png" alt="Zettelkasten Image">
+    </picture>
+</div>
 <br />
 
 [zettelkasten.de](https://zettelkasten.de/introduction/) is a wonderful little site that is all about, well, zettelkasten. Do read the [introduction](https://zettelkasten.de/introduction/). To pick an excerpt from there:
@@ -171,7 +176,10 @@ Excerpt from [Wikipedia article](https://en.wikipedia.org/wiki/Spaced_repetition
 
 <br />
 <div align="center">
-<div align="center"> <img src="https://raw.githubusercontent.com/p-tupe/zettel-merken/refs/heads/main/spaced-repetition.png" alt="Spaced Repetition Image"> </div>
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/p-tupe/zettel-merken/refs/heads/main/spaced-repetition.png">
+      <img src="https://raw.githubusercontent.com/p-tupe/zettel-merken/refs/heads/main/spaced-repetition-light.png" alt="Spaced Repetition Image">
+    </picture>
 </div>
 <br />
 
@@ -185,7 +193,7 @@ That is were Zettel Merken comes into play. Not only does this program keep trac
 
 ## Macos launchd for daily run
 
-1. Save this in `~/Library/LaunchAgents/com.pritesh.zettelmerken.plist`
+1. Save this in `~/Library/LaunchAgents/com.ptupe.zettelmerken.plist`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
