@@ -226,3 +226,11 @@ That is were Zettel Merken comes into play. Not only does this program keep trac
 ```bash
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ptupe.zettelmerken.plist
 ```
+
+## Roadmap
+
+- Add linux/windows support
+- Add email support
+- Add slack support
+- Add view to see reviewed notes
+- Add preview to see upcoming notes
