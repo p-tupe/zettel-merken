@@ -3,11 +3,16 @@
 use anyhow::{Result, bail};
 use std::env;
 
+use crate::utils::local_notification;
+
 mod config;
 mod store;
 mod utils;
 
 fn main() -> Result<()> {
+    #[cfg(target_os = "macos")]
+    notify_rust::set_application("com.apple.Terminal").unwrap();
+
     let args: Vec<String> = env::args().skip(1).collect();
     match args
         .iter()
@@ -21,6 +26,7 @@ fn main() -> Result<()> {
         ["config"] => config::edit(),
         ["help"] => print_help(),
         ["run"] => daily_run(),
+        ["test"] => local_notification("test", "this is a test notif"),
         [_, ..] => bail!("unknown command"),
     }
 }

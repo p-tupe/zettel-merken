@@ -47,7 +47,7 @@ impl Config {
     pub fn notify(&self, notes: Vec<String>) -> Result<()> {
         use Notification::*;
 
-        let summary = if notes.len() > 0 {
+        let summary = if !notes.is_empty() {
             &notes.join(", ")
         } else {
             "all good today!"

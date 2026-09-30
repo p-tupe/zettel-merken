@@ -229,7 +229,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ptupe.zettelmerken.p
 
 ## Roadmap
 
-- Add linux/windows support
+- ~Add linux/windows support~
 - Add email support
 - Add slack support
 - Add view to see reviewed notes

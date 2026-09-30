@@ -43,11 +43,13 @@ pub fn get_note_entries(cfg: &config::Config) -> anyhow::Result<Vec<DirEntry>> {
 }
 
 pub fn local_notification(title: &str, subtitle: &str) -> Result<()> {
-    use mac_notification_sys::*;
-
-    let bundle = get_bundle_identifier_or_default("tips");
-    set_application(&bundle).unwrap();
-    send_notification(title, None, subtitle, None).unwrap();
+    if let Err(e) = notify_rust::Notification::new()
+        .summary(title)
+        .body(subtitle)
+        .show()
+    {
+        eprint!("could not send a notification {}", e);
+    };
 
     Ok(())
 }
@@ -66,9 +68,9 @@ pub fn get_next_review_date(
     };
 
     let now = UtcDateTime::now();
-    let mut new_prev_reviews = Vec::from(prev_reviews);
+    let mut new_prev_reviews = prev_reviews;
     new_prev_reviews.push(now.to_string());
     let new_next_review = Some(now.add(i64::pow(2, count).days()).to_string());
 
-    return (new_prev_reviews, new_next_review);
+    (new_prev_reviews, new_next_review)
 }
