@@ -1,7 +1,7 @@
 [package]
 name = "zettel-merken"
 description = "Supercharge your learning using zettelkasten and spaced repetition"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2024"
 authors = ["Pritesh Tupe <mail@priteshtupe.com>"]
 documentation = "https://github.com/p-tupe/zettel-merken"
