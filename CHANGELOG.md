@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2](https://github.com/p-tupe/zettel-merken/compare/v0.1.2...v0.2.2) - 2026-09-30
+
+### Other
+
+- Make notifications platform-agnostic (prev were macos only)
+
 ## [0.1.2](https://github.com/p-tupe/zettel-merken/compare/v0.1.1...v0.1.2) - 2026-09-28
 
 ### Added
