@@ -1,59 +1,146 @@
-name: release-plz
+name: Release
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Release version"
+        type: choice
+        required: true
+        options:
+          - retry
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write     # push the bump commit + tag, create the release
+  id-token: write     # crates.io trusted publishing
 
 jobs:
-
-  # Publish to crates.io (via trusted publishing), tag, and create the GitHub release.
-  release-plz-release:
-    name: Release-plz release
-    runs-on: macos-latest
-    permissions:
-      contents: write
-      pull-requests: read
-      id-token: write
-    concurrency:
-      group: release-plz-release-${{ github.ref }}
-      cancel-in-progress: false
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - name: Run release-plz
-        uses: release-plz/action@v0.5
-        with:
-          command: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # Open/update a PR bumping the version and changelog for the next release.
-  release-plz-pr:
-    name: Release-plz PR
+  resolve:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    concurrency:
-      group: release-plz-pr-${{ github.ref }}
-      cancel-in-progress: false
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}   # 0.3.0
+      tag:     ${{ steps.resolve.outputs.tag }}       # v0.3.0
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          persist-credentials: false
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - name: Run release-plz
-        uses: release-plz/action@v0.5
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Resolve the version
+        id: resolve
+        run: ./scripts/release/resolve.sh "${{ inputs.bump }}" >> "$GITHUB_OUTPUT"
+
+  bump:
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
         with:
-          command: release-pr
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-edit
+        if: inputs.bump != 'retry'
+        run: cargo install cargo-edit --locked
+      - name: Bump Cargo.toml and Cargo.lock
+        if: inputs.bump != 'retry'
+        run: cargo set-version "${{ needs.resolve.outputs.version }}"
+      - name: Commit and tag
+        if: inputs.bump != 'retry'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: release ${{ needs.resolve.outputs.tag }}"
+          git tag "${{ needs.resolve.outputs.tag }}"
+          git push origin HEAD:main
+          git push origin "${{ needs.resolve.outputs.tag }}"
+      - name: Ensure the tag exists
+        if: inputs.bump == 'retry'
+        run: |
+          tag="${{ needs.resolve.outputs.tag }}"
+          git rev-parse -q --verify "refs/tags/$tag" >/dev/null && exit 0
+          git tag "$tag"
+          git push origin "$tag"
+
+  build:
+    needs: bump
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-latest,     target: x86_64-apple-darwin }
+          - { runner: macos-latest,     target: aarch64-apple-darwin }
+          - { runner: ubuntu-latest,    target: x86_64-unknown-linux-gnu }
+          - { runner: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.resolve.outputs.tag }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Package
+        run: ./scripts/release/build.sh "${{ matrix.target }}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: zettel-merken-${{ matrix.target }}
+          path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish the release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ needs.resolve.outputs.tag }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "release $tag exists — replacing its assets"
+            gh release upload "$tag" dist/*.tar.gz dist/*.sha256 --clobber
+          else
+            gh release create "$tag" \
+              --title "$tag" \
+              --generate-notes \
+              dist/*.tar.gz dist/*.sha256
+          fi
+
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.resolve.outputs.tag }}
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Is this version already on crates.io?
+        id: check
+        run: |
+          name=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')
+          version="${{ needs.resolve.outputs.version }}"
+          if curl -sf -A "zettel-merken-release" \
+               "https://crates.io/api/v1/crates/$name/$version" >/dev/null; then
+            echo "already published: $name $version"
+            echo "skip=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Exchange the OIDC token for a crates.io token
+        if: steps.check.outputs.skip != 'true'
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+      - name: cargo publish
+        if: steps.check.outputs.skip != 'true'
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
